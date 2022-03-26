@@ -4,16 +4,25 @@
  */
 package reto_tecnico;
 
+import controlador.PremioJpaController;
+import java.util.List;
+import javax.swing.JOptionPane;
+import modelo.Premio;
+
 /**
  *
  * @author WPOSS
  */
 public class MenuPrincipal extends javax.swing.JFrame implements ICambiarVentana {
 
+    private final PremioJpaController controlador = new PremioJpaController();
+    private String nombre;
+    private String tipoPremio;
+
     public MenuPrincipal() {
         initComponents();
         this.setLocationRelativeTo(null);
-
+        llenarTipoPremio();
     }
 
     /**
@@ -113,7 +122,13 @@ public class MenuPrincipal extends javax.swing.JFrame implements ICambiarVentana
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_MP_iniciar1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_MP_iniciar1ActionPerformed
-
+        nombre = txtNombre.getText();
+        tipoPremio = cb_MP_tipoPremio.getSelectedItem().toString();
+        try {
+            cambiarVentana();
+        } catch (NullPointerException e) {
+            System.out.println(e.getMessage());
+        }
 
     }//GEN-LAST:event_btn_MP_iniciar1ActionPerformed
 
@@ -134,9 +149,21 @@ public class MenuPrincipal extends javax.swing.JFrame implements ICambiarVentana
 
     @Override
     public void cambiarVentana() {
-
+        Juego juego = new Juego(nombre, tipoPremio);
+        juego.setVisible(true);
+        this.dispose();
     }
 
+    private void llenarTipoPremio() {
+        List<Premio> listaPremios = controlador.findPremioEntities();
+        try {
+            for (Premio premio : listaPremios) {
+                cb_MP_tipoPremio.addItem(premio.getTipoPremio());
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al añadir Tipos de premios");
+        }
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_MP_iniciar1;
