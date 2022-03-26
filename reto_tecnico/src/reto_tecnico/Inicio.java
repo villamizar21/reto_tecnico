@@ -4,6 +4,11 @@
  */
 package reto_tecnico;
 
+import controlador.JugadorJpaController;
+import java.util.List;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import modelo.Jugador;
 
 /**
  *
@@ -11,12 +16,13 @@ package reto_tecnico;
  */
 public class Inicio extends javax.swing.JFrame implements ICambiarVentana {
 
-   
+    private final JugadorJpaController controlador = new JugadorJpaController();
+    private Jugador jugador = new Jugador();
 
     public Inicio() {
         initComponents();
         this.setLocationRelativeTo(null);
-        
+        llenarTabla();
     }
 
     /**
@@ -130,7 +136,8 @@ public class Inicio extends javax.swing.JFrame implements ICambiarVentana {
     }//GEN-LAST:event_btn_I_nuevoJuegoActionPerformed
 
     private void btn_I_salirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_I_salirActionPerformed
-        
+        JOptionPane.showMessageDialog(null, "Hasta luego, vuelve pronto.");
+        this.dispose();
     }//GEN-LAST:event_btn_I_salirActionPerformed
 
     /**
@@ -176,7 +183,25 @@ public class Inicio extends javax.swing.JFrame implements ICambiarVentana {
     }
 
     private void llenarTabla() {
-       
+        String Columnas[] = {"JUGADOR", "TIPO DE PREMIO", "ACUMULADO", "RONDA"};
+        DefaultTableModel TablaModelo = new DefaultTableModel(Columnas, 0);
+        Object[] objetos = new Object[4];
+        List lista;
+        try {
+            lista = controlador.findJugadorEntities();
+            for (int i = 0; i < lista.size(); i++) {
+                jugador = (Jugador) lista.get(i);
+                objetos[0] = jugador.getNombre();
+                objetos[1] = jugador.getPremio().getTipoPremio();
+                objetos[2] = jugador.getAcomulado();
+                objetos[3] = jugador.getRonda().getNivel();
+                TablaModelo.addRow(objetos);
+            }
+            this.tb_I_historico.setModel(TablaModelo);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar datos de la tabla.");
+        }
     }
 
 
