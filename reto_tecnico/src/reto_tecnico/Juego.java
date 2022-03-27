@@ -4,14 +4,50 @@
  */
 package reto_tecnico;
 
+import controlador.JugadorJpaController;
+import controlador.RondaJpaController;
+import java.util.List;
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.swing.JOptionPane;
+import modelo.Categoria;
+import modelo.Jugador;
+import modelo.Opcion;
+import modelo.Pregunta;
+import modelo.Premio;
+import modelo.Ronda;
+
 /**
  *
  * @author WPOSS
  */
 public class Juego extends javax.swing.JFrame implements ICambiarVentana {
 
+    private Opcion opcion = new Opcion();
+    private Categoria categoria = new Categoria();
+    private Jugador jugador = new Jugador();
+    private Premio premio = new Premio();
+    private String respuestaCorrecta = "", nombreJugador = "", tipoPremio = "";
+    private int acumulado = 0, nivel = 0, i = 0;
+    private final RondaJpaController controladorRonda = new RondaJpaController();
+    private final JugadorJpaController controladorJugador = new JugadorJpaController();
+    private final EntityManager em = controladorRonda.getEntityManager();
+
     public Juego() {
 
+    }
+
+    public Juego(String nombreJugador, String TipoPremio) {
+        initComponents();
+        this.setLocationRelativeTo(null);
+
+        this.nombreJugador = nombreJugador;
+        this.tipoPremio = TipoPremio;
+
+        nivel = 1;
+
+        Iniciar();
+        comenzarJuego();
     }
 
     @SuppressWarnings("unchecked")
@@ -146,11 +182,13 @@ public class Juego extends javax.swing.JFrame implements ICambiarVentana {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_JP_retirarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_JP_retirarActionPerformed
-
+        JOptionPane.showMessageDialog(null, "Es una pena que te vayas..., pero no te preocupes, tus datos serán guardados.");
+        nivel--;
+        guardarDatos();
     }//GEN-LAST:event_btn_JP_retirarActionPerformed
 
     private void btn_JP_siguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_JP_siguienteActionPerformed
-
+        comprobarRespuesta();
     }//GEN-LAST:event_btn_JP_siguienteActionPerformed
 
     public static void main(String args[]) {
@@ -169,6 +207,129 @@ public class Juego extends javax.swing.JFrame implements ICambiarVentana {
         this.dispose();
     }
 
+    private void Iniciar() {
+
+        txt_JP_premio.setText(tipoPremio + " A CONSEGUIR: 100");
+
+        rbg_JP_grupoBotones.add(rbtn_JP_opcion1);
+        rbg_JP_grupoBotones.add(rbtn_JP_opcion2);
+        rbg_JP_grupoBotones.add(rbtn_JP_opcion3);
+        rbg_JP_grupoBotones.add(rbtn_JP_opcion4);
+    }
+
+    private void comenzarJuego() {
+        if (nivel == 5) {
+            btn_JP_siguiente.setText("FINALIZAR");
+        }
+        txt_JP_roda.setText("RONDA " + nivel);
+        txt_JP_acumulado.setText("ACUMULADO: " + acumulado);
+        Query RsRonda = em.createQuery("SELECT r FROM Ronda r WHERE r.nivel = :nivel").setParameter("nivel", nivel);
+        List<Ronda> listaRondas = (List<Ronda>) RsRonda.getResultList();
+        for (Ronda ronda : listaRondas) {
+            categoria = ronda.getCategoriaList().get(0);
+            txt_JP_categoria.setText("CATEGORIA: " + categoria.getNombre());
+            if (categoria != null) {
+                Query RsPregunta = em.createNativeQuery("SELECT * FROM pregunta WHERE Categoria =? ORDER BY rand() LIMIT 1", Pregunta.class).setParameter(1, categoria.getId());
+                List<Pregunta> listaPreguntas = (List<Pregunta>) RsPregunta.getResultList();
+                if (!listaPreguntas.isEmpty()) {
+                    for (Pregunta pregunta : listaPreguntas) {
+                        txt_JP_pregunta.setText(pregunta.getPregunta());
+                        Query RsOpcion = em.createNativeQuery("SELECT * FROM opcion WHERE Pregunta =?", Opcion.class).setParameter(1, pregunta.getId());
+                        List<Opcion> listaOpciones = (List<Opcion>) RsOpcion.getResultList();
+                        if (!listaOpciones.isEmpty()) {
+                            for (i = 0; i < listaOpciones.size(); i++) {
+                                opcion = listaOpciones.get(i);
+                                if (i == 0) {
+                                    rbtn_JP_opcion1.setText(opcion.getRespuesta());
+                                } else if (i == 1) {
+                                    rbtn_JP_opcion2.setText(opcion.getRespuesta());
+                                } else if (i == 2) {
+                                    rbtn_JP_opcion3.setText(opcion.getRespuesta());
+                                } else if (i == 3) {
+                                    rbtn_JP_opcion4.setText(opcion.getRespuesta());
+                                }
+                                if (opcion.getEstado() == 0) {
+                                    respuestaCorrecta = opcion.getRespuesta();
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    private void comprobarRespuesta() {
+        if (rbtn_JP_opcion1.isSelected()) {
+            if (rbtn_JP_opcion1.getText().equals(respuestaCorrecta)) {
+                siguienteNivel();
+            } else {
+                respuestaIncorrecta();
+            }
+        } else if (rbtn_JP_opcion2.isSelected()) {
+            if (rbtn_JP_opcion2.getText().equals(respuestaCorrecta)) {
+                siguienteNivel();
+            } else {
+                respuestaIncorrecta();
+            }
+        } else if (rbtn_JP_opcion3.isSelected()) {
+            if (rbtn_JP_opcion3.getText().equals(respuestaCorrecta)) {
+                siguienteNivel();
+            } else {
+                respuestaIncorrecta();
+            }
+        } else if (rbtn_JP_opcion4.isSelected()) {
+            if (rbtn_JP_opcion4.getText().equals(respuestaCorrecta)) {
+                siguienteNivel();
+            } else {
+                respuestaIncorrecta();
+            }
+        }
+        rbg_JP_grupoBotones.clearSelection();
+    }
+
+    private void finJuego() {
+        JOptionPane.showMessageDialog(null, "Felicidades por lograrlo!!,  tu puntaje fue: " + acumulado);
+        guardarDatos();
+    }
+
+    private void siguienteNivel() {
+        acumulado += 100;
+        nivel++;
+        if (nivel > 5) {
+            nivel--;
+            finJuego();
+        } else {
+            comenzarJuego();
+        }
+    }
+
+    private void respuestaIncorrecta() {
+        JOptionPane.showMessageDialog(null, "Respuesta incorrecta, vuelve a intentarlo.");
+        guardarDatos();
+    }
+
+    private void guardarDatos() {
+        Query RsPremio = em.createQuery("SELECT p FROM Premio p WHERE p.tipoPremio = :tipoPremio").setParameter("tipoPremio", tipoPremio);
+        List<Premio> listaPremios = (List<Premio>) RsPremio.getResultList();
+        int idPremio = 0;
+        for (Premio premio : listaPremios) {
+            idPremio = premio.getId();
+        }
+        Query RsRonda = em.createQuery("SELECT r FROM Ronda r WHERE r.nivel = :nivel").setParameter("nivel", nivel);
+        List<Ronda> listaRondas = (List<Ronda>) RsRonda.getResultList();
+        int idRonda = 0;
+        for (Ronda ronda : listaRondas) {
+            idRonda = ronda.getId();
+        }
+        jugador.setNombre(nombreJugador);
+        jugador.setPremio(new Premio(idPremio));
+        jugador.setAcomulado(String.valueOf(acumulado));
+        jugador.setRonda(new Ronda(idRonda));
+        controladorJugador.create(jugador);
+        cambiarVentana();
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_JP_retirar;
